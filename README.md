@@ -40,7 +40,6 @@ DB_PASSWORD=your_password
 
 - 예시:
 ```
-  
   git commit -m "feat: Add employee search function"
   git commit -m "fix: Fix database connection error"
   git commit -m "docs: Update README.md"
