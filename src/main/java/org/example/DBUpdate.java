@@ -9,8 +9,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 public class DBUpdate extends JFrame {
-
-    private void addNewDataSwing (){
+    private static void addNewDataSwing (){
         // 이 부분에 UI를 통해 데이터셋을 입력
 
         // Test Code
@@ -37,7 +36,7 @@ public class DBUpdate extends JFrame {
 
     }
 
-    private void addNewData(String tableName, Map<String, Object> data) throws SQLException {
+    private static void addNewData(String tableName, Map<String, Object> data) throws SQLException {
         try(Connection conn = JDBCConnection.getConnection();){
             // Data 결합을 위한 StringJoiner
             StringJoiner attributes = new StringJoiner(", ");
