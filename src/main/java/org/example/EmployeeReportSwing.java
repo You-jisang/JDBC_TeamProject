@@ -70,7 +70,18 @@ public class EmployeeReportSwing extends JFrame {
                 fetchAllEmployeeReport();
             }
         });
-        add(fetchAllButton, BorderLayout.SOUTH);
+        // 하단에 출력 버튼 및 조건 삭제 패널을 추가하기 위한 새로운 패널 설정
+        JPanel southPanel = new JPanel();
+        southPanel.setLayout(new BorderLayout());
+
+
+        southPanel.add(fetchAllButton, BorderLayout.NORTH);
+
+        // 조건 삭제 패널 추가
+        DBDelete deletePanel = new DBDelete();
+        southPanel.add(deletePanel, BorderLayout.SOUTH);
+
+        add(southPanel, BorderLayout.SOUTH);
     }
 
     private void fetchAllEmployeeReport() {
