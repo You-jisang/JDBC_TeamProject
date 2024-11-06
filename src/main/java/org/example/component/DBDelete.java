@@ -77,6 +77,27 @@ public class DBDelete extends JPanel {
      * 삭제 버튼 클릭 시 호출됨
      */
     private void deleteSelectedEmployees() {
+        // 부모 프레임에서 Name과 SSN 체크박스 상태 확인
+        Container parent = getParent();
+        while (parent != null && !(parent instanceof EmployeeReportView)) {
+            parent = parent.getParent();
+        }
+
+        if (parent instanceof EmployeeReportView) {
+            EmployeeReportView view = (EmployeeReportView) parent;
+            boolean isNameAndSsnSelected = view.getCheckBoxes().stream()
+                    .filter(cb -> cb.getText().equals("Name") || cb.getText().equals("Ssn"))
+                    .allMatch(JCheckBox::isSelected);
+
+            if (!isNameAndSsnSelected) {
+                JOptionPane.showMessageDialog(this,
+                        "직원 정보 삭제를 위해서는 검색 항목에서 Name과 SSN을 선택해주세요.",
+                        "알림",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+        }
+
         // 선택된 직원이 없는 경우 체크
         if (selectedSsns == null || selectedSsns.isEmpty()) {
             JOptionPane.showMessageDialog(this,
