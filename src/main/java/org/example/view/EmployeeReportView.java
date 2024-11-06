@@ -181,18 +181,6 @@ public class EmployeeReportView extends JFrame {
         loadEmployeeData();
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            EmployeeReportView system = new EmployeeReportView();
-            system.setVisible(true);
-        });
-    }
-
     private void initializeUI() {
         setTitle("Information Retrieval System");
         setSize(1200, 600);  // 너비 증가
@@ -363,6 +351,15 @@ public class EmployeeReportView extends JFrame {
     }
 
     public void updateTableModel(DefaultTableModel newModel) {
+        // 검색으로 테이블 초기화 되었을 때 튜플 체크할 수 있게 업데이트
+        if (tableModel != null) {
+            for (var listener : tableModel.getTableModelListeners()) {
+                tableModel.removeTableModelListener(listener);
+            }
+        }
+
+
+        tableModel = newModel;  // 클래스의 tableModel 필드 업데이트
         resultTable.setModel(newModel);
 
         if (newModel.getColumnCount() > 2) {
@@ -377,6 +374,12 @@ public class EmployeeReportView extends JFrame {
                     checkBox.setSelected(value != null && (Boolean) value);
                     checkBox.setHorizontalAlignment(JLabel.CENTER);
                     return checkBox;
+                }
+            });
+
+            newModel.addTableModelListener(e -> {
+                if (e.getColumn() == 0) {
+                    updateSelectedEmployees();
                 }
             });
 
@@ -401,11 +404,40 @@ public class EmployeeReportView extends JFrame {
         return checkBoxes;
     }
 
-    public SimpleDateFormat getTimestampFormat() {
-        return timestampFormat;
+    // 튜플 체크 박스 초기화 후 선택 가능하게 함
+    public void addCheckboxListener(DefaultTableModel model) {
+        model.addTableModelListener(e -> {
+            if (e.getColumn() == 0) {
+                updateSelectedEmployees();
+            }
+        });
+    }
+
+    // 검색 등으로 테이플 초기화 될 때 튜플 체크박스도 같이 초기화
+    public void clearSelectedEmployees() {
+        selectedEmployeeNames.clear();
+        selectedEmployeeSsns.clear();
+        deletePanel.updateSelectedEmployees(selectedEmployeeNames, selectedEmployeeSsns);
+        dbModify.setSelectedSsns(selectedEmployeeSsns);
     }
 
     public void refreshTable() {
         loadEmployeeData();
+    }
+
+    public JTable getResultTable() {
+        return resultTable;
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            EmployeeReportView system = new EmployeeReportView();
+            system.setVisible(true);
+        });
     }
 }

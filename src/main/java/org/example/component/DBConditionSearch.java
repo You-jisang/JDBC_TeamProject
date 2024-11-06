@@ -6,6 +6,7 @@ import org.example.model.Employee;
 import org.example.view.EmployeeReportView;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.Connection;
@@ -13,17 +14,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 /**
  * 조건 검색 기능을 제공하는 클래스
  */
+
 /**
  * 직원 정보 검색을 위한 클래스
  * 일반 검색과 그룹별 평균 급여 검색 기능을 제공
  */
 public class DBConditionSearch {
+    private final EmployeeDAO employeeDAO;           // DB 접근 객체
+    private final EmployeeReportView parentFrame;    // 부모 프레임 참조
     // 주요 컴포넌트 필드
     private JComboBox<String> searchTypeComboBox;    // 검색 유형 선택 콤보박스
     private JComboBox<String> departmentComboBox;  // 부서 선택 콤보박스
@@ -31,8 +35,6 @@ public class DBConditionSearch {
     private JTextField salaryField;                // 급여 입력 필드
     private JPanel inputPanel;                     // 입력 컴포넌트를 담을 패널
     private JComboBox<String> groupByComboBox;       // 그룹화 기준 선택 콤보박스
-    private final EmployeeDAO employeeDAO;           // DB 접근 객체
-    private final EmployeeReportView parentFrame;    // 부모 프레임 참조
 
 
     /**
@@ -176,6 +178,9 @@ public class DBConditionSearch {
      * 일반 검색 또는 그룹별 검색을 구분하여 처리
      */
     public void performSearch() {
+        // 검색 시작할 때 이전 선택 목록 초기화
+        parentFrame.clearSelectedEmployees();
+
         String groupBy = (String) groupByComboBox.getSelectedItem();
 
         try {
@@ -271,31 +276,46 @@ public class DBConditionSearch {
                         case "Name" ->
                                 rowData.add(emp.getFirstName() + " " + emp.getMinit() + ". " + emp.getLastName());
                         case "Ssn" -> rowData.add(emp.getSsn());
-                        case "Bdate" ->
-                                rowData.add(emp.getBirthDate() != null ?
-                                        new SimpleDateFormat("yyyy-MM-dd").format(emp.getBirthDate()) : "");
+                        case "Bdate" -> rowData.add(emp.getBirthDate() != null ?
+                                new SimpleDateFormat("yyyy-MM-dd").format(emp.getBirthDate()) : "");
                         case "Address" -> rowData.add(emp.getAddress());
                         case "Sex" -> rowData.add(emp.getSex());
                         case "Salary" -> rowData.add(String.format("%.2f", emp.getSalary()));
                         case "Supervisor" -> rowData.add(emp.getSupervisorSsn());
                         case "Department" -> rowData.add(emp.getDepartmentName());
-                        case "Modified" ->{
+                        case "Modified" -> {
                             if (emp.getModified() != null) {
                                 SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                                 timestampFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));  // 한국 시간대 설정
                                 rowData.add(timestampFormat.format(emp.getModified()));
-                        } else {
-                            rowData.add("");
-                        }
+                            } else {
+                                rowData.add("");
+                            }
                         }
                     }
                 }
             }
             model.addRow(rowData);
         }
-
-        // 테이블 모델 업데이트
         parentFrame.updateTableModel(model);
+
+        JTable table = parentFrame.getResultTable();  // getResultTable() 메서드 필요
+        if (table.getColumnCount() > 0) {
+            table.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(new JCheckBox()));
+            table.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+                private final JCheckBox checkBox = new JCheckBox();
+
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value,
+                                                               boolean isSelected, boolean hasFocus, int row, int column) {
+                    checkBox.setSelected(value != null && (Boolean) value);
+                    checkBox.setHorizontalAlignment(JLabel.CENTER);
+                    return checkBox;
+                }
+            });
+        }
+
+        parentFrame.addCheckboxListener(model);
     }
 
     /**
@@ -346,17 +366,17 @@ public class DBConditionSearch {
         String sql = switch (groupBy) {
             case "성별" -> "SELECT Sex, AVG(Salary) as avg_salary FROM EMPLOYEE GROUP BY Sex";
             case "부서" -> """
-                SELECT d.Dname, AVG(e.Salary) as avg_salary 
-                FROM EMPLOYEE e 
-                JOIN DEPARTMENT d ON e.Dno = d.Dnumber 
-                GROUP BY d.Dname
-                """;
+                    SELECT d.Dname, AVG(e.Salary) as avg_salary 
+                    FROM EMPLOYEE e 
+                    JOIN DEPARTMENT d ON e.Dno = d.Dnumber 
+                    GROUP BY d.Dname
+                    """;
             case "상급자" -> """
-                SELECT CONCAT(s.Fname, ' ', s.Lname) as supervisor, AVG(e.Salary) as avg_salary 
-                FROM EMPLOYEE e 
-                LEFT JOIN EMPLOYEE s ON e.Super_ssn = s.Ssn 
-                GROUP BY s.Ssn, s.Fname, s.Lname
-                """;
+                    SELECT CONCAT(s.Fname, ' ', s.Lname) as supervisor, AVG(e.Salary) as avg_salary 
+                    FROM EMPLOYEE e 
+                    LEFT JOIN EMPLOYEE s ON e.Super_ssn = s.Ssn 
+                    GROUP BY s.Ssn, s.Fname, s.Lname
+                    """;
             default -> throw new SQLException("Invalid group by option");
         };
 
