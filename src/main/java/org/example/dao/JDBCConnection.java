@@ -1,4 +1,4 @@
-package org.example;
+package org.example.dao;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
