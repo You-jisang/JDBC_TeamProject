@@ -50,8 +50,13 @@ public class LoginView extends JDialog {
         titleLabel.setFont(new Font("맑은 고딕", Font.BOLD, 16)); // 폰트 설정
         add(titleLabel, BorderLayout.NORTH);
 
-        // 다이얼로그 배경색 설정
         getContentPane().setBackground(new Color(240, 240, 240));
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                System.exit(0); // 창을 닫으면 프로그램 종료
+            }
+        });
     }
 
     public boolean isAdmin() {
