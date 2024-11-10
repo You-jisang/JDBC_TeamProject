@@ -50,6 +50,73 @@ public class EmployeeDAO {
     }
 
     /**
+     * 직원 SSN 존재 여부 확인 메서드
+     *
+     * @param ssn 확인할 직원의 SSN
+     * @return SSN이 존재하면 true, 그렇지 않으면 false
+     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
+     */
+    public boolean isEmployeeSsnExists(String ssn) throws SQLException {
+        String sql = "SELECT 1 FROM EMPLOYEE WHERE Ssn = ?";
+        try (Connection conn = JDBCConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, ssn);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();  // SSN이 존재하면 true 반환
+            }
+        }
+    }
+
+    /**
+     * 관리자로 지정된 SSN인지 확인하는 메서드
+     *
+     * @param ssn 확인할 SSN
+     * @return SSN이 ADMIN 테이블에 존재하면 true, 그렇지 않으면 false
+     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
+     */
+    public boolean isAdminSsn(String ssn) throws SQLException {
+        String sql = "SELECT 1 FROM ADMIN WHERE ssn = ?";
+        try (Connection conn = JDBCConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, ssn);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();  // SSN이 존재하면 true 반환
+            }
+        }
+    }
+
+    /**
+     * 새로운 관리자 SSN을 추가하는 메서드
+     *
+     * @param ssn 추가할 관리자의 SSN
+     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
+     */
+    public void addAdminSsn(String ssn) throws SQLException {
+        String sql = "INSERT INTO ADMIN (ssn) VALUES (?)";
+        try (Connection conn = JDBCConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, ssn);
+            pstmt.executeUpdate();
+        }
+    }
+/*
+    // 관리자 아이디와 비밀번호 인증 메서드
+    public boolean authenticateAdmin(String username, String password) throws SQLException {
+        String sql = "SELECT password FROM ADMIN WHERE username = ?";
+        try (Connection conn = JDBCConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String storedPassword = rs.getString("password");
+                    return storedPassword.equals(password);
+                }
+            }
+        }
+        return false;
+    }*/
+
+    /**
      * 새로운 직원 정보 추가 메소드
      *
      * @param employee 추가할 직원 정보
