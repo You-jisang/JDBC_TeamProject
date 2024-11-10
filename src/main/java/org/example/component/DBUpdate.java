@@ -277,7 +277,7 @@ public class DBUpdate extends JDialog {
         if (!validateInput(lastNameField, "[a-zA-Z]+", "성은 영어로 입력해야 합니다.",true)) { return false; }
         if (!validateInput(ssnField, "\\d{9}", "SSN은 9자리 숫자여야 합니다.",true)) { return false; }
         if (!validateInput(birthdateField, "\\d{4}-\\d{2}-\\d{2}", "출생일은 YYYY-MM-DD 형식입니다.",false)) { return false; }
-        if (!validateInput(salaryField, "(\\d{1,10}|\\d{1,7}\\.\\d{2})", "Salary는 소숫점 둘째 자리까지 허용되는 숫자 형식입니다.",false)) { return false; }
+        if (!validateInput(salaryField, "(\\d{1,8}(\\.\\d{2})?)", "Salary는 소숫점 둘째 자리까지 허용되는 숫자 형식입니다.",false)) { return false; }
         if (!validateInput(superSsnField, "\\d{9}", "Super_SSN은 9자리 숫자여야 합니다.",false)) { return false; }
         if (!validateInput(dnoField, "\\d{1,2}", "Dno는 1자리 또는 2자리 숫자여야 합니다.",true)) { return false; }
 
