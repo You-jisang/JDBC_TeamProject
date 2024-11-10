@@ -10,9 +10,9 @@ import java.sql.SQLException;
 
 public class LoginView extends JDialog {
     private final JTextField ssnField;  // SSN 입력 필드
+    private final EmployeeDAO employeeDAO;
     private boolean authenticated = false;
     private boolean isAdmin = false;  // 사용자가 관리자 여부를 확인하는 필드
-    private final EmployeeDAO employeeDAO;
 
     public LoginView(Frame parent) {
         super(parent, "로그인", true);

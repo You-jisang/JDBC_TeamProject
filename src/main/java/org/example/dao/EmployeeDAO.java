@@ -5,8 +5,10 @@ import org.example.model.Employee;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 직원 데이터의 데이터베이스 접근을 담당하는 DAO(Data Access Object) 클래스
@@ -220,109 +222,90 @@ public class EmployeeDAO {
      * @return 검색된 직원 목록
      * @throws SQLException SQL 실행 중 발생할 수 있는 예외
      */
-    public List<Employee> searchEmployees(Map<String, Object> criteria) throws SQLException {
+    public List<Employee> searchEmployees(Map<String, List<Object>> criteria) throws SQLException {
         List<Employee> employees = new ArrayList<>();
 
-        // 선택된 속성들 가져오기
+        // criteria에서 attributes 가져오기 (타입 안전하게 처리)
         @SuppressWarnings("unchecked")
-        List<String> selectedAttributes = (List<String>) criteria.getOrDefault("attributes",
-                new ArrayList<String>());
+        List<Object> attrObjects = criteria.getOrDefault("attributes", new ArrayList<>());
+        List<String> selectedAttributes = attrObjects.stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
 
-        // 동적 SQL 쿼리 생성
-        StringBuilder sql = new StringBuilder("SELECT e.Ssn"); // SSN은 항상 필요 (기본키)
+        // 모든 컬럼을 항상 조회
+        StringBuilder sql = new StringBuilder("""
+                SELECT e.Fname, e.Minit, e.Lname, e.Ssn, e.Bdate, e.Address, 
+                       e.Sex, e.Salary, e.Super_ssn, e.Dno, d.Dname, e.modified
+                FROM EMPLOYEE e 
+                LEFT JOIN DEPARTMENT d ON e.Dno = d.Dnumber 
+                WHERE 1=1
+                """);
 
-        // 선택된 속성에 따라 SELECT 절 구성
-        if (selectedAttributes.contains("Name")) {
-            sql.append(", e.Fname, e.Minit, e.Lname");
-        }
-        if (selectedAttributes.contains("Bdate")) {
-            sql.append(", e.Bdate");
-        }
-        if (selectedAttributes.contains("Address")) {
-            sql.append(", e.Address");
-        }
-        if (selectedAttributes.contains("Sex")) {
-            sql.append(", e.Sex");
-        }
-        if (selectedAttributes.contains("Salary")) {
-            sql.append(", e.Salary");
-        }
-        if (selectedAttributes.contains("Supervisor")) {
-            sql.append(", e.Super_ssn");
-        }
-        if (selectedAttributes.contains("Department")) {
-            sql.append(", d.Dname");
-        }
-        if (selectedAttributes.contains("Modified")) {  // Modified 컬럼 추가
-            sql.append(", e.modified");
-        }
-
-        // FROM 절과 기본 JOIN 추가
-        sql.append(" FROM EMPLOYEE e LEFT JOIN DEPARTMENT d ON e.Dno = d.Dnumber WHERE 1=1");
+        List<Object> params = new ArrayList<>();
 
         // 검색 조건 추가
-        if (criteria.containsKey("type") && criteria.containsKey("value")) {
-            String type = (String) criteria.get("type");
-            String value = (String) criteria.get("value");
+        if (criteria.containsKey("Name") && !criteria.get("Name").isEmpty()) {
+            sql.append(" AND (CONCAT(e.Fname, ' ', e.Minit, '. ', e.Lname) LIKE ?)");
+            params.add("%" + criteria.get("Name").get(0) + "%");
+        }
 
-            // 검색 타입에 따른 WHERE 조건 추가
-            switch (type) {
-                case "부서" -> sql.append(" AND d.Dname = ?");
-                case "성별" -> sql.append(" AND e.Sex = ?");
-                case "급여" -> sql.append(" AND e.Salary >= ?");
+        if (criteria.containsKey("Ssn") && !criteria.get("Ssn").isEmpty()) {
+            sql.append(" AND e.Ssn = ?");
+            params.add(criteria.get("Ssn").get(0));
+        }
+
+        if (criteria.containsKey("Bdate") && !criteria.get("Bdate").isEmpty()) {
+            sql.append(" AND e.Bdate = ?");
+            params.add(criteria.get("Bdate").get(0));
+        }
+
+        if (criteria.containsKey("Address") && !criteria.get("Address").isEmpty()) {
+            sql.append(" AND e.Address LIKE ?");
+            params.add("%" + criteria.get("Address").get(0) + "%");
+        }
+
+        if (criteria.containsKey("Supervisor") && !criteria.get("Supervisor").isEmpty()) {
+            sql.append(" AND e.Super_ssn = ?");
+            params.add(criteria.get("Supervisor").get(0));
+        }
+
+        if (criteria.containsKey("부서") && !criteria.get("부서").isEmpty()) {
+            sql.append(" AND d.Dname IN (");
+            sql.append(String.join(",", Collections.nCopies(criteria.get("부서").size(), "?")));
+            sql.append(")");
+            params.addAll(criteria.get("부서"));
+        }
+
+        if (criteria.containsKey("성별") && !criteria.get("성별").isEmpty()) {
+            sql.append(" AND e.Sex IN (");
+            sql.append(String.join(",", Collections.nCopies(criteria.get("성별").size(), "?")));
+            sql.append(")");
+            params.addAll(criteria.get("성별"));
+        }
+
+        if (criteria.containsKey("급여") && !criteria.get("급여").isEmpty()) {
+            for (Object salary : criteria.get("급여")) {
+                sql.append(" AND e.Salary >= ?");
+                try {
+                    params.add(Double.parseDouble(salary.toString()));
+                } catch (NumberFormatException e) {
+                    throw new SQLException("Invalid salary format: " + salary);
+                }
             }
         }
 
-        // PreparedStatement 생성 및 실행
         try (Connection conn = JDBCConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            // 검색 조건 파라미터 설정
-            if (criteria.containsKey("type") && criteria.containsKey("value")) {
-                String type = (String) criteria.get("type");
-                String value = (String) criteria.get("value");
-
-                if ("급여".equals(type)) {
-                    pstmt.setDouble(1, Double.parseDouble(value));
-                } else {
-                    pstmt.setString(1, value);
-                }
+            // 파라미터 설정
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
             }
 
-            // 쿼리 실행 및 결과 처리
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Employee employee = new Employee();
-                    employee.setSsn(rs.getString("Ssn")); // 기본키는 항상 설정
-
-                    // 선택된 속성만 설정
-                    if (selectedAttributes.contains("Name")) {
-                        employee.setFirstName(rs.getString("Fname"));
-                        employee.setMinit(rs.getString("Minit").charAt(0));
-                        employee.setLastName(rs.getString("Lname"));
-                    }
-                    if (selectedAttributes.contains("Bdate")) {
-                        employee.setBirthDate(rs.getDate("Bdate"));
-                    }
-                    if (selectedAttributes.contains("Address")) {
-                        employee.setAddress(rs.getString("Address"));
-                    }
-                    if (selectedAttributes.contains("Sex")) {
-                        employee.setSex(rs.getString("Sex").charAt(0));
-                    }
-                    if (selectedAttributes.contains("Salary")) {
-                        employee.setSalary(rs.getDouble("Salary"));
-                    }
-                    if (selectedAttributes.contains("Supervisor")) {
-                        employee.setSupervisorSsn(rs.getString("Super_ssn"));
-                    }
-                    if (selectedAttributes.contains("Department")) {
-                        employee.setDepartmentName(rs.getString("Dname"));
-                    }
-                    if (selectedAttributes.contains("Modified")) {
-                        employee.setModified(rs.getTimestamp("modified"));
-                    }
-
+                    // createEmployeeFromResultSet 사용하여 모든 필드 설정
+                    Employee employee = createEmployeeFromResultSet(rs);
                     employees.add(employee);
                 }
             }

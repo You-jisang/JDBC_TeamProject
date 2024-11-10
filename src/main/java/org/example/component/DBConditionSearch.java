@@ -36,6 +36,9 @@ public class DBConditionSearch {
     private JPanel inputPanel;                     // 입력 컴포넌트를 담을 패널
     private JComboBox<String> groupByComboBox;       // 그룹화 기준 선택 콤보박스
 
+    private List<JPanel> conditionPanels = new ArrayList<>();  // 추가
+    private JPanel conditionsPanel;  // 추가
+
 
     /**
      * 생성자: 부모 프레임 참조를 받아 초기화
@@ -43,6 +46,7 @@ public class DBConditionSearch {
     public DBConditionSearch(EmployeeReportView parent) {
         this.parentFrame = parent;
         this.employeeDAO = new EmployeeDAO();
+        this.conditionPanels = new ArrayList<>();
     }
 
     /**
@@ -53,58 +57,163 @@ public class DBConditionSearch {
         JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
         searchPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        // 상단 패널 (검색 조건)
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // 전체 검색 조건을 담을 패널
+        conditionsPanel = new JPanel();
+        conditionsPanel.setLayout(new BoxLayout(conditionsPanel, BoxLayout.Y_AXIS));
 
-        // 검색 유형 콤보박스
-        topPanel.add(new JLabel("검색 범위:"));
-        searchTypeComboBox = new JComboBox<>(new String[]{
-                "전체", "부서", "성별", "급여"
-        });
-        searchTypeComboBox.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
-        topPanel.add(searchTypeComboBox);
+        // 기본 검색 조건 패널 (첫 줄)
+        JPanel baseCondition = createConditionRow(true);
+        conditionPanels.add(baseCondition);
+        conditionsPanel.add(baseCondition);
 
-        // 입력 컴포넌트를 담을 패널
-        inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // 조건 추가 버튼과 검색 버튼을 담을 패널
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        // 부서 선택 콤보박스 초기화
-        departmentComboBox = new JComboBox<>(getDepartmentList());
-        departmentComboBox.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        JButton addButton = new JButton("+ 조건 추가");
+        addButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        addButton.setPreferredSize(new Dimension(100, 25));
+        addButton.addActionListener(e -> addConditionRow());
+        buttonPanel.add(addButton);
 
-        // 성별 선택 콤보박스 초기화
-        sexComboBox = new JComboBox<>(new String[]{"F", "M"});
-        sexComboBox.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        JButton searchButton = new JButton("검색");
+        searchButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        searchButton.setPreferredSize(new Dimension(80, 25));
+        searchButton.addActionListener(e -> performSearch());
+        buttonPanel.add(searchButton);
 
-        // 급여 입력 필드 초기화
-        salaryField = new JTextField(10);
-        salaryField.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
-
-        // 검색 유형 변경 이벤트 처리
-        searchTypeComboBox.addActionListener(e -> updateInputComponent());
-
-        topPanel.add(inputPanel);
-
-        // 그룹별 평균 급여 콤보박스
+        // 그룹별 평균 급여 패널 (기존 코드 유지)
+        JPanel groupPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        groupPanel.add(new JLabel("그룹별 평균급여:"));
         groupByComboBox = new JComboBox<>(new String[]{
                 "그룹 없음", "성별", "부서", "상급자"
         });
         groupByComboBox.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
-        topPanel.add(new JLabel("그룹별 평균급여:"));
-        topPanel.add(groupByComboBox);
+        groupByComboBox.setPreferredSize(new Dimension(120, 25));
+        groupPanel.add(groupByComboBox);
 
-        // 검색 버튼
-        JButton searchButton = new JButton("검색");
-        searchButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
-        searchButton.addActionListener(e -> performSearch());
-        topPanel.add(searchButton);
+        // 전체 패널 구성
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(conditionsPanel, BorderLayout.CENTER);
+        topPanel.add(buttonPanel, BorderLayout.EAST);
+        topPanel.add(groupPanel, BorderLayout.NORTH);
 
         searchPanel.add(topPanel, BorderLayout.NORTH);
-
-        // 초기 입력 컴포넌트 설정
-        updateInputComponent();
-
         return searchPanel;
     }
+
+    private JPanel createConditionRow(boolean isFirst) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+
+        // 검색 유형 콤보박스 생성
+        String[] options = isFirst && conditionPanels.isEmpty() ?
+                new String[]{"전체", "Name", "Ssn", "Bdate", "Address", "부서", "성별", "Salary", "Supervisor"} :
+                new String[]{"Name", "Ssn", "Bdate", "Address", "부서", "성별", "Salary", "Supervisor"};
+
+        JComboBox<String> typeBox = new JComboBox<>(options);
+        typeBox.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        typeBox.setPreferredSize(new Dimension(100, 25));
+        panel.add(typeBox);
+
+        // 입력 컴포넌트를 담을 패널
+        JPanel inputPanel = new JPanel(new CardLayout());
+        inputPanel.setPreferredSize(new Dimension(200, 25));
+
+        // 각 타입별 입력 컴포넌트 생성
+        JTextField nameField = new JTextField(20);
+        JTextField ssnField = new JTextField(20);
+        JTextField bdateField = new JTextField(20);
+        JTextField addressField = new JTextField(20);
+        JTextField supervisorField = new JTextField(20);
+
+        // 기존 컴포넌트
+        JComboBox<String> deptBox = new JComboBox<>(getDepartmentList());
+        JComboBox<String> sexBox = new JComboBox<>(new String[]{"F", "M"});
+
+        JPanel salaryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JTextField salaryField = new JTextField(10);
+        salaryPanel.add(salaryField);
+        salaryPanel.add(new JLabel("이상"));
+
+        // 각 필드에 툴팁 추가
+        nameField.setToolTipText("예: John B. Smith");
+        ssnField.setToolTipText("예: 123456789");
+        bdateField.setToolTipText("예: 1965-01-09");
+        addressField.setToolTipText("예: 731 Fondren, Houston, TX");
+        supervisorField.setToolTipText("관리자 SSN (예: 333445555)");
+
+        // 컴포넌트 추가
+        inputPanel.add(new JPanel(), "empty");
+        inputPanel.add(nameField, "Name");
+        inputPanel.add(ssnField, "Ssn");
+        inputPanel.add(bdateField, "Bdate");
+        inputPanel.add(addressField, "Address");
+        inputPanel.add(deptBox, "부서");
+        inputPanel.add(sexBox, "성별");
+        inputPanel.add(salaryPanel, "Salary");
+        inputPanel.add(supervisorField, "Supervisor");
+
+        panel.add(inputPanel);
+
+        // 삭제 버튼 (첫 번째 줄이 아닌 경우에만)
+        if (!isFirst) {
+            JButton removeButton = new JButton("X");
+            removeButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+            removeButton.setPreferredSize(new Dimension(25, 25));
+            removeButton.addActionListener(e -> removeConditionRow(panel));
+            panel.add(removeButton);
+        }
+
+        // 검색 유형 변경 리스너
+        typeBox.addActionListener(e -> {
+            CardLayout cl = (CardLayout) inputPanel.getLayout();
+            String selected = (String) typeBox.getSelectedItem();
+            cl.show(inputPanel, selected != null && !"전체".equals(selected) ? selected : "empty");
+        });
+
+        return panel;
+    }
+
+    private void addConditionRow() {
+        JPanel newRow = createConditionRow(false);
+        conditionPanels.add(newRow);
+        conditionsPanel.add(newRow);
+        conditionsPanel.revalidate();
+        conditionsPanel.repaint();
+
+        updateTypeBoxStates();  // 상태 업데이트
+    }
+
+    private void removeConditionRow(JPanel panel) {
+        conditionPanels.remove(panel);
+        conditionsPanel.remove(panel);
+        conditionsPanel.revalidate();
+        conditionsPanel.repaint();
+
+        updateTypeBoxStates();  // 상태 업데이트
+    }
+
+    private void updateTypeBoxStates() {
+        boolean hasMultipleRows = conditionPanels.size() > 1;
+
+        for (JPanel panel : conditionPanels) {
+            @SuppressWarnings("unchecked")
+            JComboBox<String> typeBox = (JComboBox<String>) panel.getComponent(0);
+            DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) typeBox.getModel();
+
+            if (hasMultipleRows) {
+                if ("전체".equals(typeBox.getSelectedItem())) {
+                    typeBox.setSelectedIndex(1);
+                }
+                model.removeElement("전체");
+            } else {
+                if (model.getIndexOf("전체") == -1) {
+                    model.insertElementAt("전체", 0);
+                }
+            }
+        }
+    }
+
 
     // 데이터베이스에서 부서 목록을 가져오는 메서드
     private String[] getDepartmentList() {
@@ -123,62 +232,11 @@ public class DBConditionSearch {
         }
     }
 
-    // 선택된 검색 유형에 따라 입력 컴포넌트 업데이트
-    private void updateInputComponent() {
-        inputPanel.removeAll();
-        String selectedType = (String) searchTypeComboBox.getSelectedItem();
-
-        if (selectedType != null && !"전체".equals(selectedType)) {
-            switch (selectedType) {
-                case "부서" -> inputPanel.add(departmentComboBox);
-                case "성별" -> inputPanel.add(sexComboBox);
-                case "급여" -> {
-                    inputPanel.add(salaryField);
-                    inputPanel.add(new JLabel("이상"));
-                }
-            }
-        }
-
-        inputPanel.revalidate();
-        inputPanel.repaint();
-    }
-
-    // 검색 수행 메서드는 기존과 동일하게 유지하되, 검색 조건 가져오는 부분 수정
-    private Map<String, Object> getSearchCriteria() {
-        Map<String, Object> criteria = new HashMap<>();
-        String searchType = (String) searchTypeComboBox.getSelectedItem();
-
-        if (!"전체".equals(searchType)) {
-            criteria.put("type", searchType);
-            switch (searchType) {
-                case "부서" -> criteria.put("value", departmentComboBox.getSelectedItem());
-                case "성별" -> criteria.put("value", sexComboBox.getSelectedItem());
-                case "급여" -> criteria.put("value", salaryField.getText().trim());
-            }
-        }
-
-        // 체크된 속성 목록 추가
-        List<String> selectedAttributes = new ArrayList<>();
-        for (JCheckBox checkBox : parentFrame.getCheckBoxes()) {
-            if (checkBox.isSelected()) {
-                selectedAttributes.add(checkBox.getText());
-            }
-        }
-        criteria.put("attributes", selectedAttributes);
-
-        return criteria;
-    }
-
-    /**
-     * 검색 수행 메소드
-     * 일반 검색 또는 그룹별 검색을 구분하여 처리
-     */
     /**
      * 검색 수행 메소드
      * 일반 검색 또는 그룹별 검색을 구분하여 처리
      */
     public void performSearch() {
-        // 검색 시작할 때 이전 선택 목록 초기화
         parentFrame.clearSelectedEmployees();
 
         String groupBy = (String) groupByComboBox.getSelectedItem();
@@ -193,7 +251,6 @@ public class DBConditionSearch {
                 }
             }
 
-            // 검색 항목 미선택 시 경고
             if (!anyCheckBoxSelected) {
                 JOptionPane.showMessageDialog(parentFrame,
                         "검색할 항목을 하나 이상 선택해주세요.",
@@ -202,30 +259,11 @@ public class DBConditionSearch {
                 return;
             }
 
-            // 그룹별 검색 또는 일반 검색 분기
             if (groupBy != null && !"그룹 없음".equals(groupBy)) {
-                // 그룹별 평균 급여 검색
                 Map<String, Double> avgSalaries = getAverageSalaryByGroup(groupBy);
                 displayGroupResults(avgSalaries, groupBy);
             } else {
-                // 일반 검색 수행
-                Map<String, Object> searchCriteria = getSearchCriteria();  // 수정된 getSearchCriteria() 메서드 사용
-
-                // 급여 검색 시 유효성 검사
-                if ("급여".equals(searchCriteria.get("type"))) {
-                    String salaryStr = (String) searchCriteria.get("value");
-                    try {
-                        Double.parseDouble(salaryStr);
-                    } catch (NumberFormatException e) {
-                        JOptionPane.showMessageDialog(parentFrame,
-                                "급여는 숫자로 입력해주세요.",
-                                "입력 오류",
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                }
-
-                // 검색 실행 및 결과 표시
+                Map<String, List<Object>> searchCriteria = getAllConditions();
                 List<Employee> results = employeeDAO.searchEmployees(searchCriteria);
                 displayResults(results);
             }
@@ -238,83 +276,117 @@ public class DBConditionSearch {
     }
 
     /**
-     * 일반 검색 결과를 테이블에 표시
-     * 선택된 속성만 컬럼으로 표시
+     * 검색 결과를 테이블에 표시하는 메소드
+     * 사용자가 선택한 컬럼 순서를 유지하며 데이터를 표시
+     *
+     * @param employees 표시할 직원 목록
      */
     private void displayResults(List<Employee> employees) {
-        // 테이블 모델 생성 (체크박스 포함)
+        // 체크박스 열을 포함한 커스텀 테이블 모델 생성
         DefaultTableModel model = new DefaultTableModel() {
             @Override
             public Class<?> getColumnClass(int column) {
+                // 첫 번째 열은 체크박스로 사용
                 return column == 0 ? Boolean.class : Object.class;
             }
 
             @Override
             public boolean isCellEditable(int row, int column) {
+                // 체크박스 열만 편집 가능하도록 설정
                 return column == 0;
             }
         };
 
-        // 컬럼 추가
-        model.addColumn(""); // 체크박스 컬럼
-        // 선택된 속성만 컬럼으로 추가
+        // 체크박스 열 추가 (첫 번째 열)
+        model.addColumn("");
+
+        // 선택된 컬럼들의 순서를 보존하기 위한 리스트
+        List<String> selectedColumns = new ArrayList<>();
+
+        // 체크된 속성들을 사용자가 선택한 순서대로 컬럼 추가
         for (JCheckBox checkBox : parentFrame.getCheckBoxes()) {
             if (checkBox.isSelected()) {
-                model.addColumn(checkBox.getText().toUpperCase());
+                String columnName = checkBox.getText().toUpperCase();
+                selectedColumns.add(columnName);  // 선택된 컬럼 순서 저장
+                model.addColumn(columnName);      // 테이블에 컬럼 추가
             }
         }
 
-        // 데이터 행 추가
+        // 각 직원의 데이터를 행으로 추가
         for (Employee emp : employees) {
             Vector<Object> rowData = new Vector<>();
-            rowData.add(false); // 체크박스 초기값
+            rowData.add(false);  // 체크박스 초기값 (false = 미선택)
 
-            // 선택된 속성 값만 추가
-            for (JCheckBox checkBox : parentFrame.getCheckBoxes()) {
-                if (checkBox.isSelected()) {
-                    switch (checkBox.getText()) {
-                        case "Name" ->
-                                rowData.add(emp.getFirstName() + " " + emp.getMinit() + ". " + emp.getLastName());
-                        case "Ssn" -> rowData.add(emp.getSsn());
-                        case "Bdate" -> rowData.add(emp.getBirthDate() != null ?
-                                new SimpleDateFormat("yyyy-MM-dd").format(emp.getBirthDate()) : "");
-                        case "Address" -> rowData.add(emp.getAddress());
-                        case "Sex" -> rowData.add(emp.getSex());
-                        case "Salary" -> rowData.add(String.format("%.2f", emp.getSalary()));
-                        case "Supervisor" -> rowData.add(emp.getSupervisorSsn());
-                        case "Department" -> rowData.add(emp.getDepartmentName());
-                        case "Modified" -> {
-                            if (emp.getModified() != null) {
-                                SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                                timestampFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));  // 한국 시간대 설정
-                                rowData.add(timestampFormat.format(emp.getModified()));
-                            } else {
-                                rowData.add("");
-                            }
-                        }
-                    }
+            // 선택된 컬럼 순서대로 데이터 추가
+            for (String column : selectedColumns) {
+                switch (column) {
+                    case "NAME" ->
+                        // 이름은 "FirstName M. LastName" 형식으로 표시
+                            rowData.add(emp.getFirstName() + " " +
+                                    emp.getMinit() + ". " +
+                                    emp.getLastName());
+
+                    case "SSN" -> rowData.add(emp.getSsn());
+
+                    case "BDATE" ->
+                        // 생년월일이 있는 경우에만 날짜 형식으로 변환하여 표시
+                            rowData.add(emp.getBirthDate() != null ?
+                                    new SimpleDateFormat("yyyy-MM-dd").format(emp.getBirthDate()) :
+                                    "");
+
+                    case "ADDRESS" -> rowData.add(emp.getAddress());
+
+                    case "SEX" -> rowData.add(emp.getSex());
+
+                    case "SALARY" ->
+                        // 급여는 소수점 둘째자리까지 표시
+                            rowData.add(String.format("%.2f", emp.getSalary()));
+
+                    case "SUPERVISOR" -> rowData.add(emp.getSupervisorSsn());
+
+                    case "DEPARTMENT" -> rowData.add(emp.getDepartmentName());
+
+                    case "MODIFIED" ->
+                        // 수정일시가 있는 경우에만 날짜시간 형식으로 변환하여 표시
+                            rowData.add(emp.getModified() != null ?
+                                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(emp.getModified()) :
+                                    "");
                 }
             }
+            // 완성된 행 데이터를 테이블 모델에 추가
             model.addRow(rowData);
         }
+
+        // 부모 프레임의 테이블 모델 업데이트
         parentFrame.updateTableModel(model);
 
-        JTable table = parentFrame.getResultTable();  // getResultTable() 메서드 필요
-        if (table.getColumnCount() > 0) {
-            table.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(new JCheckBox()));
-            table.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
-                private final JCheckBox checkBox = new JCheckBox();
+        // 결과 테이블 가져오기
+        JTable table = parentFrame.getResultTable();
 
-                @Override
-                public Component getTableCellRendererComponent(JTable table, Object value,
-                                                               boolean isSelected, boolean hasFocus, int row, int column) {
-                    checkBox.setSelected(value != null && (Boolean) value);
-                    checkBox.setHorizontalAlignment(JLabel.CENTER);
-                    return checkBox;
-                }
-            });
+        // 체크박스 열에 대한 설정 (첫 번째 열)
+        if (table.getColumnCount() > 0) {
+            table.getColumnModel().getColumn(0).setCellEditor(
+                    new DefaultCellEditor(new JCheckBox()));
+
+            // 체크박스 렌더러 설정
+            table.getColumnModel().getColumn(0).setCellRenderer(
+                    new DefaultTableCellRenderer() {
+                        private final JCheckBox checkBox = new JCheckBox();
+
+                        @Override
+                        public Component getTableCellRendererComponent(
+                                JTable table, Object value,
+                                boolean isSelected, boolean hasFocus,
+                                int row, int column) {
+                            // 체크박스 상태 설정
+                            checkBox.setSelected(value != null && (Boolean) value);
+                            checkBox.setHorizontalAlignment(JLabel.CENTER);
+                            return checkBox;
+                        }
+                    });
         }
 
+        // 체크박스 선택 이벤트 리스너 추가
         parentFrame.addCheckboxListener(model);
     }
 
@@ -393,5 +465,48 @@ public class DBConditionSearch {
         }
 
         return avgSalaries;
+    }
+
+    private Map<String, List<Object>> getAllConditions() {
+        Map<String, List<Object>> conditions = new HashMap<>();
+
+        // 검색 조건들 수집
+        for (JPanel panel : conditionPanels) {
+            JComboBox<?> typeBox = (JComboBox<?>) panel.getComponent(0);
+            JPanel inputPanel = (JPanel) panel.getComponent(1);
+
+            String type = (String) typeBox.getSelectedItem();
+            if (!"전체".equals(type)) {
+                Object value = null;
+                Component[] components = inputPanel.getComponents();
+                for (Component comp : components) {
+                    if (comp.isVisible()) {
+                        if (comp instanceof JComboBox) {
+                            value = ((JComboBox<?>) comp).getSelectedItem();
+                        } else if (comp instanceof JTextField) {
+                            value = ((JTextField) comp).getText().trim();
+                        } else if (comp instanceof JPanel) {
+                            // 급여 패널의 경우
+                            JTextField salaryField = (JTextField) ((JPanel) comp).getComponent(0);
+                            value = salaryField.getText().trim();
+                        }
+                    }
+                }
+                if (value != null && !value.toString().isEmpty()) {
+                    conditions.computeIfAbsent(type, k -> new ArrayList<>()).add(value);
+                }
+            }
+        }
+
+        // 체크된 속성 목록 추가
+        List<Object> selectedAttributes = new ArrayList<>();
+        for (JCheckBox checkBox : parentFrame.getCheckBoxes()) {
+            if (checkBox.isSelected()) {
+                selectedAttributes.add(checkBox.getText());
+            }
+        }
+        conditions.put("attributes", selectedAttributes);
+
+        return conditions;
     }
 }
