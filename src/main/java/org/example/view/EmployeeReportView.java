@@ -15,31 +15,36 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
+import java.util.Vector;
 
 public class EmployeeReportView extends JFrame {
-    private boolean isAdmin = false;  // 로그인한 사용자가 관리자라면 true
-    private JButton addAdminButton;
-
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    private final SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
+    private final SimpleDateFormat dateFormat;
+    private final SimpleDateFormat timestampFormat;
     private final String[] attributes = {
             "Name", "Ssn", "Bdate", "Address", "Sex",
             "Salary", "Supervisor", "Department", "Modified"
     };
     private final EmployeeDAO employeeDAO;
-    private final List<JCheckBox> checkBoxes;
-    private final List<String> selectedEmployeeNames = new ArrayList<>();
-    private final List<String> selectedEmployeeSsns = new ArrayList<>();
+    private final List<JCheckBox> checkBoxes = new ArrayList<>();  // 필드에서 초기화
+    private final List<String> selectedEmployeeNames = new ArrayList<>();  // 필드에서 초기화
+    private final List<String> selectedEmployeeSsns = new ArrayList<>();  // 필드에서 초기화
     private final DBDelete deletePanel;
     private final DBConditionSearch dbConditionSearch;
     private final DBModify dbModify;
+    private boolean isAdmin = false;  // 로그인한 사용자가 관리자라면 true
+    private JButton addAdminButton;
     private JTable resultTable;
     private DefaultTableModel tableModel;
 
     public EmployeeReportView() {
+        // SimpleDateFormat 초기화
+        dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        timestampFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+
+        // 나머지 필드들 초기화
         employeeDAO = new EmployeeDAO();
-        checkBoxes = new ArrayList<>();
         deletePanel = new DBDelete();
         dbConditionSearch = new DBConditionSearch(this);
         dbModify = new DBModify(this);
@@ -47,7 +52,18 @@ public class EmployeeReportView extends JFrame {
         showLoginDialog();
 
         initializeUI();
-        loadEmployeeData();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            EmployeeReportView system = new EmployeeReportView();
+            system.setVisible(true);
+        });
     }
 
     private void showLoginDialog() {
@@ -65,30 +81,133 @@ public class EmployeeReportView extends JFrame {
         add(createTopPanel(), BorderLayout.NORTH);
         add(createCenterPanel(), BorderLayout.CENTER);
         add(createBottomPanel(), BorderLayout.SOUTH);
+
+        // 빈 테이블 모델로 초기화
+        String[] columnNames = {
+                "", "NAME", "SSN", "BDATE", "ADDRESS", "SEX",
+                "SALARY", "SUPERVISOR", "DEPARTMENT", "MODIFIED"
+        };
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public Class<?> getColumnClass(int column) {
+                return column == 0 ? Boolean.class : Object.class;
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 0;
+            }
+        };
+        resultTable.setModel(tableModel);
     }
 
+    /**
+     * 전체 직원 데이터를 로드하고 테이블에 표시하는 메소드
+     * 체크된 컬럼만 선택된 순서대로 표시하며, 선택 상태를 초기화함
+     */
     private void loadEmployeeData() {
-        tableModel.setRowCount(0);
+        // 선택된 직원 정보 초기화 (테이블 새로고침 시 선택 상태 리셋)
+        selectedEmployeeNames.clear();
+        selectedEmployeeSsns.clear();
+        deletePanel.updateSelectedEmployees(selectedEmployeeNames, selectedEmployeeSsns);
+        dbModify.setSelectedSsns(selectedEmployeeSsns);
+
+        // 현재 선택된 컬럼들의 순서를 보존하기 위한 리스트
+        List<String> selectedColumns = new ArrayList<>();
+        for (JCheckBox checkBox : checkBoxes) {
+            if (checkBox.isSelected()) {
+                selectedColumns.add(checkBox.getText().toUpperCase());
+            }
+        }
+
+        // 체크박스 기능을 포함한 커스텀 테이블 모델 생성
+        DefaultTableModel model = new DefaultTableModel() {
+            @Override
+            public Class<?> getColumnClass(int column) {
+                // 첫 번째 열은 체크박스로 표시
+                return column == 0 ? Boolean.class : Object.class;
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // 체크박스 열만 편집 가능하도록 설정
+                return column == 0;
+            }
+        };
+
+        // 체크박스 열 추가 (첫 번째 열)
+        model.addColumn("");
+
+        // 선택된 컬럼들을 순서대로 추가
+        for (String columnName : selectedColumns) {
+            model.addColumn(columnName);
+        }
 
         try {
+            // 데이터베이스에서 전체 직원 정보 조회
             List<Employee> employees = employeeDAO.getAllEmployees();
 
+            // 각 직원의 데이터를 행으로 추가
             for (Employee emp : employees) {
-                Object[] rowData = new Object[10];
-                rowData[0] = false;
-                rowData[1] = emp.getFirstName() + " " + emp.getMinit() + ". " + emp.getLastName();
-                rowData[2] = emp.getSsn();
-                rowData[3] = emp.getBirthDate() != null ? dateFormat.format(emp.getBirthDate()) : "";
-                rowData[4] = emp.getAddress();
-                rowData[5] = String.valueOf(emp.getSex());
-                rowData[6] = String.format("%.2f", emp.getSalary());
-                rowData[7] = emp.getSupervisorSsn();
-                rowData[8] = emp.getDepartmentName();
-                rowData[9] = emp.getModified() != null ? timestampFormat.format(emp.getModified()) : "";
+                Vector<Object> rowData = new Vector<>();
+                rowData.add(false);  // 체크박스 초기값 (미선택)
 
-                tableModel.addRow(rowData);
+                // 선택된 컬럼 순서대로 데이터 추가
+                for (String column : selectedColumns) {
+                    switch (column) {
+                        case "NAME" -> rowData.add(emp.getFirstName() + " " +
+                                emp.getMinit() + ". " +
+                                emp.getLastName());
+                        case "SSN" -> rowData.add(emp.getSsn());
+                        case "BDATE" -> rowData.add(emp.getBirthDate() != null ?
+                                dateFormat.format(emp.getBirthDate()) :
+                                "");
+                        case "ADDRESS" -> rowData.add(emp.getAddress());
+                        case "SEX" -> rowData.add(emp.getSex());
+                        case "SALARY" -> rowData.add(String.format("%.2f", emp.getSalary()));
+                        case "SUPERVISOR" -> rowData.add(emp.getSupervisorSsn());
+                        case "DEPARTMENT" -> rowData.add(emp.getDepartmentName());
+                        case "MODIFIED" -> rowData.add(emp.getModified() != null ?
+                                timestampFormat.format(emp.getModified()) :
+                                "");
+                    }
+                }
+                model.addRow(rowData);
             }
+
+            // 테이블 모델 업데이트
+            tableModel = model;
+            resultTable.setModel(model);
+
+            // 테이블 컬럼 설정
+            if (resultTable.getColumnCount() > 0) {
+                // 체크박스 열 설정
+                resultTable.getColumnModel().getColumn(0).setMaxWidth(30);  // 체크박스 열 너비를 최소화
+                resultTable.getColumnModel().getColumn(0).setCellEditor(
+                        new DefaultCellEditor(new JCheckBox()));
+
+                // 체크박스 렌더러 설정 (체크박스 중앙 정렬)
+                resultTable.getColumnModel().getColumn(0).setCellRenderer(
+                        new DefaultTableCellRenderer() {
+                            private final JCheckBox checkBox = new JCheckBox();
+
+                            @Override
+                            public Component getTableCellRendererComponent(
+                                    JTable table, Object value,
+                                    boolean isSelected, boolean hasFocus,
+                                    int row, int column) {
+                                checkBox.setSelected(value != null && (Boolean) value);
+                                checkBox.setHorizontalAlignment(JLabel.CENTER);
+                                return checkBox;
+                            }
+                        });
+            }
+
+            // 체크박스 선택 이벤트 리스너 추가
+            addCheckboxListener(model);
+
         } catch (SQLException e) {
+            // 데이터 로드 중 오류 발생 시 사용자에게 알림
             JOptionPane.showMessageDialog(this,
                     "데이터를 불러오는 중 오류가 발생했습니다: " + e.getMessage(),
                     "에러",
@@ -102,23 +221,10 @@ public class EmployeeReportView extends JFrame {
 
         JPanel searchPanel = dbConditionSearch.createSearchPanel();
 
-        JButton addButton = new JButton("직원 추가");
-        addButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
-        addButton.addActionListener(e -> showAddEmployeeDialog());
-        searchPanel.add(Box.createHorizontalStrut(300));
-        searchPanel.add(addButton);
-
-        // 관리자 추가 버튼
-        addAdminButton = new JButton("관리자 추가");
-        addAdminButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
-        addAdminButton.setEnabled(isAdmin);  // 관리자인 경우에만 활성화
-        addAdminButton.addActionListener(e -> showAddAdminDialog());
-        searchPanel.add(addAdminButton);
-
         JPanel attributePanel = new JPanel(new BorderLayout());
         attributePanel.setBorder(BorderFactory.createTitledBorder("검색 항목"));
 
-        JPanel checkBoxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel checkBoxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 30, 5));  // 체크박스 간격 15로 설정
         for (String attr : attributes) {
             JCheckBox checkBox = new JCheckBox(attr);
             checkBox.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
@@ -208,8 +314,59 @@ public class EmployeeReportView extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
 
+        // 상단 패널 - 수정 기능과 버튼들을 포함
+        JPanel topPanel = new JPanel(new BorderLayout());
+
+        // 수정 패널은 왼쪽에
+        JPanel modifyPanel = dbModify.createModifyPanel();
+        // 관리자가 아닐 경우 모든 컴포넌트 비활성화
+        if (!isAdmin) {
+            for (Component comp : modifyPanel.getComponents()) {
+                comp.setEnabled(false);
+                if (comp instanceof JButton) {
+                    ((JButton) comp).setToolTipText("관리자 권한이 필요합니다");
+                }
+            }
+        }
+        topPanel.add(modifyPanel, BorderLayout.CENTER);
+
+        // 버튼들은 오른쪽에
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+
+        // 직원 추가 버튼
+        JButton addButton = new JButton("직원 추가");
+        addButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
         if (isAdmin) {
-            panel.add(dbModify.createModifyPanel(), BorderLayout.NORTH);
+            addButton.addActionListener(e -> showAddEmployeeDialog());
+        } else {
+            addButton.setEnabled(false);
+            addButton.setToolTipText("관리자 권한이 필요합니다");
+        }
+        buttonPanel.add(addButton);
+
+        // 관리자 추가 버튼
+        addAdminButton = new JButton("관리자 추가");
+        addAdminButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        if (isAdmin) {
+            addAdminButton.addActionListener(e -> showAddAdminDialog());
+        } else {
+            addAdminButton.setEnabled(false);
+            addAdminButton.setToolTipText("관리자 권한이 필요합니다");
+        }
+        buttonPanel.add(addAdminButton);
+
+        topPanel.add(buttonPanel, BorderLayout.EAST);
+        panel.add(topPanel, BorderLayout.NORTH);
+
+        // 하단 패널 - 삭제 기능
+        // 삭제 패널 컴포넌트들 비활성화 (관리자가 아닐 경우)
+        if (!isAdmin) {
+            for (Component comp : deletePanel.getComponents()) {
+                comp.setEnabled(false);
+                if (comp instanceof JButton) {
+                    ((JButton) comp).setToolTipText("관리자 권한이 필요합니다");
+                }
+            }
         }
         panel.add(deletePanel, BorderLayout.SOUTH);
 
@@ -316,17 +473,5 @@ public class EmployeeReportView extends JFrame {
 
     public JTable getResultTable() {
         return resultTable;
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            EmployeeReportView system = new EmployeeReportView();
-            system.setVisible(true);
-        });
     }
 }
