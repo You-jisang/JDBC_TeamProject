@@ -245,7 +245,47 @@ public class DBUpdate extends JDialog {
      * 입력값 검증 메소드
      * 필수 필드가 모두 입력되었는지 확인
      */
-    private boolean validateInputs() {
+    private boolean validateInput(JTextField input, String regEx, String errMessage, boolean isRequired){
+        String inputData = input.getText().trim(); // JTextField 입력값을 String으로 추출
+        
+        if(inputData.isEmpty()){ // 값이 없을 경우
+            if(isRequired){ // 필수값일 경우 오류 메시지 출력
+                JOptionPane.showMessageDialog(this,
+                        "필수 필드는 반드시 입력되어야 합니다.",
+                        "입력 오류",
+                        JOptionPane.ERROR_MESSAGE);
+                input.requestFocus();  // 해당 입력 필드에 포커스 이동
+                return false;
+            }else{ return true; }// 필수값이 아닐 경우 검증을 종료
+        }
+
+        if(!inputData.matches(regEx)){ // 유효성 검사를 통과하지 못할 경우
+            JOptionPane.showMessageDialog(
+                    this,
+                    errMessage,
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            input.requestFocus();  // 해당 입력 필드에 포커스 이동
+            return false;
+        }else{ return true; }
+    }
+
+    private boolean validateInputs(){
+
+        if (!validateInput(firstNameField, "[a-zA-Z]+", "이름은 영어로 입력해야 합니다.",true)) { return false; }
+        if (!validateInput(minitField, "[a-zA-Z]", "이니셜은 영어로 입력해야 합니다.",false)) { return false; }
+        if (!validateInput(lastNameField, "[a-zA-Z]+", "성은 영어로 입력해야 합니다.",true)) { return false; }
+        if (!validateInput(ssnField, "\\d{9}", "SSN은 9자리 숫자여야 합니다.",true)) { return false; }
+        if (!validateInput(birthdateField, "\\d{4}-\\d{2}-\\d{2}", "출생일은 YYYY-MM-DD 형식입니다.",false)) { return false; }
+        if (!validateInput(salaryField, "(\\d{1,8}(\\.\\d{2})?)", "Salary는 소숫점 둘째 자리까지 허용되는 숫자 형식입니다.",false)) { return false; }
+        if (!validateInput(superSsnField, "\\d{9}", "Super_SSN은 9자리 숫자여야 합니다.",false)) { return false; }
+        if (!validateInput(dnoField, "\\d{1,2}", "Dno는 1자리 또는 2자리 숫자여야 합니다.",true)) { return false; }
+
+        return true;
+    }
+
+    /*private boolean validateInputs() {
+
         // 필수 필드 입력 확인
         if (firstNameField.getText().trim().isEmpty() ||
                 lastNameField.getText().trim().isEmpty() ||
@@ -263,7 +303,40 @@ public class DBUpdate extends JDialog {
             return false;
         }
 
-        // SSN 유효성 검사 추가
+        // Fname 유효성 검사
+        String fname = firstNameField.getText().trim();
+        if (!fname.matches("[a-zA-Z]+")) {  // 정규식을 사용하여 영문자인지 검사
+            JOptionPane.showMessageDialog(this,
+                    "이름은 영어로 입력해야 합니다.",
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            firstNameField.requestFocus();  // Fname 입력 필드에 포커스 이동
+            return false;
+        }
+
+        // Minit 유효성 검사
+        String minit = minitField.getText().trim();
+        if (!minit.matches("[a-zA-Z]")) {  // 정규식을 사용하여 영문자 하나인지 검사
+            JOptionPane.showMessageDialog(this,
+                    "이니셜은 영어로 입력해야 합니다.",
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            minitField.requestFocus();  // Minit 입력 필드에 포커스 이동
+            return false;
+        }
+
+        // Lname 유효성 검사
+        String lname = lastNameField.getText().trim();
+        if (!lname.matches("[a-zA-Z]+")) {  // 정규식을 사용하여 영문자인지 검사
+            JOptionPane.showMessageDialog(this,
+                    "성은 영어로 입력해야 합니다.",
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            lastNameField.requestFocus();  // Lname 입력 필드에 포커스 이동
+            return false;
+        }
+
+        // SSN 유효성 검사
         String ssn = ssnField.getText().trim();
         if (!ssn.matches("\\d{9}")) {  // 정규식을 사용하여 9자리 숫자인지 검사
             JOptionPane.showMessageDialog(this,
@@ -274,6 +347,53 @@ public class DBUpdate extends JDialog {
             return false;
         }
 
+        // Bdate 유효성 검사
+        String bDate = birthdateField.getText().trim();
+        if (!ssn.matches("\\d{4}-\\d{2}-\\d{2}")) {  // 정규식을 사용하여 DATE 형식인지 검사
+            JOptionPane.showMessageDialog(this,
+                    "출생일은 YYYY-MM-DD 형식입니다.",
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            birthdateField.requestFocus();  // Bdate 입력 필드에 포커스 이동
+            return false;
+        }
+        // 주소 형식은 유효성 검사 없음
+        // 성별 형식은 유효성 검사 없음
+
+        // Salary 유효성 검사
+        String salary = salaryField.getText().trim();
+        if (!ssn.matches("(\\d{1,10}|\\d{1,7}\\.\\d{2})")) {  // 정규식을 사용하여 DECIMAL(10, 2) 형식인지 검사
+            JOptionPane.showMessageDialog(this,
+                    "Salary는 소숫점 둘째 자리까지 허용되는 숫자 형식입니다.",
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            salaryField.requestFocus();  // Salary 입력 필드에 포커스 이동
+            return false;
+        }
+
+        // Super_ssn 유효성 검사
+        String super_ssn = superSsnField.getText().trim();
+        if (!ssn.matches("\\d{9}")) {  // 정규식을 사용하여 9자리 숫자인지 검사
+            JOptionPane.showMessageDialog(this,
+                    "Super_SSN은 9자리 숫자여야 합니다.",
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            superSsnField.requestFocus();  // Super_SSN 입력 필드에 포커스 이동
+            return false;
+        }
+
+        // Dno 유효성 검사
+        String dno = dnoField.getText().trim();
+        if (!ssn.matches("\\d{1,2}")) {  // 정규식을 사용하여 1~2자리 숫자인지 검사
+            JOptionPane.showMessageDialog(this,
+                    "Dno는 1자리 또는 2자리 숫자여야 합니다.",
+                    "입력 오류",
+                    JOptionPane.ERROR_MESSAGE);
+            dnoField.requestFocus();  // Dno 입력 필드에 포커스 이동
+            return false;
+        }
+
+
         return true;
-    }
+    }*/
 }
