@@ -10,6 +10,7 @@ import org.example.model.Employee;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.Vector;
+
 
 public class EmployeeReportView extends JFrame {
     private final SimpleDateFormat dateFormat;
@@ -270,6 +272,10 @@ public class EmployeeReportView extends JFrame {
         };
 
         resultTable = new JTable(tableModel);
+
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
+        resultTable.setRowSorter(sorter);
+
         resultTable.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
         resultTable.getTableHeader().setFont(new Font("맑은 고딕", Font.BOLD, 12));
 
