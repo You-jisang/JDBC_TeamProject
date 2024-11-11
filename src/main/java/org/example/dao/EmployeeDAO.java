@@ -4,10 +4,7 @@ package org.example.dao;
 import org.example.model.Employee;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -210,7 +207,15 @@ public class EmployeeDAO {
         employee.setSupervisorSsn(rs.getString("Super_ssn"));
         employee.setDepartmentNumber(rs.getInt("Dno"));
         employee.setDepartmentName(rs.getString("Dname"));
-        employee.setModified(rs.getTimestamp("modified"));
+
+        // modified 타임스탬프 처리 수정
+        Timestamp timestamp = rs.getTimestamp("modified");
+        if (timestamp != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(timestamp);
+            cal.add(Calendar.HOUR, 9);  // UTC to KST (Korea Standard Time)
+            employee.setModified(new Timestamp(cal.getTimeInMillis()));
+        }
 
         return employee;
     }

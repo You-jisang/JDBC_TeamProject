@@ -2,7 +2,9 @@ package org.example.dao;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 
 public class JDBCConnection {

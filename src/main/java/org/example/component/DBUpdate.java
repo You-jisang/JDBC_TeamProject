@@ -84,6 +84,7 @@ import java.util.Date;
 public class DBUpdate extends JDialog {
     // === 클래스 필드 ===
     private final EmployeeReportView parentFrame;    // 부모 프레임 참조 (메인 화면)
+    private final EmployeeDAO employeeDAO;           // 데이터베이스 접근 객체
     private JTextField firstNameField;               // 이름 입력 필드
     private JTextField minitField;                   // 중간 이니셜 입력 필드
     private JTextField lastNameField;                // 성 입력 필드
@@ -94,7 +95,6 @@ public class DBUpdate extends JDialog {
     private JTextField salaryField;                  // 급여 입력 필드
     private JTextField superSsnField;                // 상사 SSN 입력 필드
     private JTextField dnoField;                     // 부서번호 입력 필드
-    private final EmployeeDAO employeeDAO;           // 데이터베이스 접근 객체
 
     /**
      * 생성자: 부모 프레임을 받아 다이얼로그 초기화
@@ -245,21 +245,23 @@ public class DBUpdate extends JDialog {
      * 입력값 검증 메소드
      * 필수 필드가 모두 입력되었는지 확인
      */
-    private boolean validateInput(JTextField input, String regEx, String errMessage, boolean isRequired){
+    private boolean validateInput(JTextField input, String regEx, String errMessage, boolean isRequired) {
         String inputData = input.getText().trim(); // JTextField 입력값을 String으로 추출
-        
-        if(inputData.isEmpty()){ // 값이 없을 경우
-            if(isRequired){ // 필수값일 경우 오류 메시지 출력
+
+        if (inputData.isEmpty()) { // 값이 없을 경우
+            if (isRequired) { // 필수값일 경우 오류 메시지 출력
                 JOptionPane.showMessageDialog(this,
                         "필수 필드는 반드시 입력되어야 합니다.",
                         "입력 오류",
                         JOptionPane.ERROR_MESSAGE);
                 input.requestFocus();  // 해당 입력 필드에 포커스 이동
                 return false;
-            }else{ return true; }// 필수값이 아닐 경우 검증을 종료
+            } else {
+                return true;
+            }// 필수값이 아닐 경우 검증을 종료
         }
 
-        if(!inputData.matches(regEx)){ // 유효성 검사를 통과하지 못할 경우
+        if (!inputData.matches(regEx)) { // 유효성 검사를 통과하지 못할 경우
             JOptionPane.showMessageDialog(
                     this,
                     errMessage,
@@ -267,21 +269,35 @@ public class DBUpdate extends JDialog {
                     JOptionPane.ERROR_MESSAGE);
             input.requestFocus();  // 해당 입력 필드에 포커스 이동
             return false;
-        }else{ return true; }
+        } else {
+            return true;
+        }
     }
 
-    private boolean validateInputs(){
+    private boolean validateInputs() {
 
-        if (!validateInput(firstNameField, "[a-zA-Z]+", "이름은 영어로 입력해야 합니다.",true)) { return false; }
-        if (!validateInput(minitField, "[a-zA-Z]", "이니셜은 영어로 입력해야 합니다.",false)) { return false; }
-        if (!validateInput(lastNameField, "[a-zA-Z]+", "성은 영어로 입력해야 합니다.",true)) { return false; }
-        if (!validateInput(ssnField, "\\d{9}", "SSN은 9자리 숫자여야 합니다.",true)) { return false; }
-        if (!validateInput(birthdateField, "\\d{4}-\\d{2}-\\d{2}", "출생일은 YYYY-MM-DD 형식입니다.",false)) { return false; }
-        if (!validateInput(salaryField, "(\\d{1,8}(\\.\\d{2})?)", "Salary는 소숫점 둘째 자리까지 허용되는 숫자 형식입니다.",false)) { return false; }
-        if (!validateInput(superSsnField, "\\d{9}", "Super_SSN은 9자리 숫자여야 합니다.",false)) { return false; }
-        if (!validateInput(dnoField, "\\d{1,2}", "Dno는 1자리 또는 2자리 숫자여야 합니다.",true)) { return false; }
-
-        return true;
+        if (!validateInput(firstNameField, "[a-zA-Z]+", "이름은 영어로 입력해야 합니다.", true)) {
+            return false;
+        }
+        if (!validateInput(minitField, "[a-zA-Z]", "이니셜은 영어로 입력해야 합니다.", false)) {
+            return false;
+        }
+        if (!validateInput(lastNameField, "[a-zA-Z]+", "성은 영어로 입력해야 합니다.", true)) {
+            return false;
+        }
+        if (!validateInput(ssnField, "\\d{9}", "SSN은 9자리 숫자여야 합니다.", true)) {
+            return false;
+        }
+        if (!validateInput(birthdateField, "\\d{4}-\\d{2}-\\d{2}", "출생일은 YYYY-MM-DD 형식입니다.", false)) {
+            return false;
+        }
+        if (!validateInput(salaryField, "(\\d{1,8}(\\.\\d{2})?)", "Salary는 소숫점 둘째 자리까지 허용되는 숫자 형식입니다.", false)) {
+            return false;
+        }
+        if (!validateInput(superSsnField, "\\d{9}", "Super_SSN은 9자리 숫자여야 합니다.", false)) {
+            return false;
+        }
+        return validateInput(dnoField, "\\d{1,2}", "Dno는 1자리 또는 2자리 숫자여야 합니다.", true);
     }
 
     /*private boolean validateInputs() {

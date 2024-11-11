@@ -108,7 +108,7 @@ public class DBModify {
 
         try (Connection conn = JDBCConnection.getConnection()) {
             // Modified 컬럼도 함께 업데이트하는 SQL 준비
-            String sql = "UPDATE EMPLOYEE SET " + selectedColumn + " = ?, modified = CONVERT_TZ(CURRENT_TIMESTAMP, 'UTC', 'Asia/Seoul') WHERE Ssn = ?";
+            String sql = "UPDATE EMPLOYEE SET " + selectedColumn + " = ?, modified = CURRENT_TIMESTAMP WHERE Ssn = ?";
 
             int successCount = 0;
             for (String ssn : selectedSsns) {
