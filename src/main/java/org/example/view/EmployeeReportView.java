@@ -10,6 +10,7 @@ import org.example.model.Employee;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.Vector;
+
 
 public class EmployeeReportView extends JFrame {
     private final SimpleDateFormat dateFormat;
@@ -178,6 +180,8 @@ public class EmployeeReportView extends JFrame {
             // 테이블 모델 업데이트
             tableModel = model;
             resultTable.setModel(model);
+            TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+            resultTable.setRowSorter(sorter);
 
             // 테이블 컬럼 설정
             if (resultTable.getColumnCount() > 0) {
@@ -270,6 +274,8 @@ public class EmployeeReportView extends JFrame {
         };
 
         resultTable = new JTable(tableModel);
+
+
         resultTable.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
         resultTable.getTableHeader().setFont(new Font("맑은 고딕", Font.BOLD, 12));
 
@@ -407,6 +413,8 @@ public class EmployeeReportView extends JFrame {
 
         tableModel = newModel;  // 클래스의 tableModel 필드 업데이트
         resultTable.setModel(newModel);
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(newModel);
+        resultTable.setRowSorter(sorter);
 
         if (newModel.getColumnCount() > 2) {
             resultTable.getColumnModel().getColumn(0).setMaxWidth(30);
