@@ -14,38 +14,45 @@ public class AddAdminView extends JDialog {
 
     public AddAdminView(Frame parent) {
         super(parent, "관리자 추가", true);
-        setSize(300, 180);
-        setLayout(new BorderLayout(10, 10));
+        setSize(500, 200);  // 크기를 더 크게 조정
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(parent); // 다이얼로그 중앙에 위치
+        setLocationRelativeTo(parent);
 
         employeeDAO = new EmployeeDAO();
 
-        // 패널 설정
-        JPanel panel = new JPanel(new GridLayout(3, 1, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        panel.setBackground(new Color(240, 240, 240)); // 배경색 설정
+        // 메인 패널
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));  // 세로 방향 레이아웃
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(40, 30, 10, 30));  // 여백 증가
 
-        JLabel titleLabel = new JLabel("관리자 추가", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("맑은 고딕", Font.BOLD, 16)); // 제목 폰트 설정
-        panel.add(titleLabel);
 
-        panel.add(new JLabel("새 관리자 SSN:"));
-        ssnField = new JTextField();
-        panel.add(ssnField);
+        // 입력 패널
+        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JLabel ssnLabel = new JLabel("새 관리자 SSN:");
+        ssnLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 16));  // 폰트 크기 증가
+        inputPanel.add(ssnLabel);
 
+        ssnField = new JTextField(20);  // 텍스트 필드 크기 증가
+        ssnField.setFont(new Font("맑은 고딕", Font.PLAIN, 12));  // 폰트 크기 증가
+        inputPanel.add(ssnField);
+
+        inputPanel.setMaximumSize(new Dimension(450, 50));  // 패널 크기 제한
+        inputPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(inputPanel);
+        mainPanel.add(Box.createVerticalStrut(30));  // 간격 추가
+
+        // 버튼
         JButton addButton = new JButton("추가");
-        addButton.setBackground(new Color(60, 120, 240)); // 버튼 배경색
-        addButton.setForeground(Color.WHITE); // 버튼 글자색
-        addButton.setFocusPainted(false); // 포커스 시 테두리 제거
-        addButton.setPreferredSize(new Dimension(100, 30)); // 버튼 크기 설정
+        addButton.setFont(new Font("맑은 고딕", Font.PLAIN, 16));  // 폰트 크기 증가
+        addButton.setPreferredSize(new Dimension(100, 40));  // 버튼 크기 증가
+        addButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         addButton.addActionListener(new AddAdminActionListener());
-        panel.add(addButton);
+        mainPanel.add(addButton);
 
-        add(panel, BorderLayout.CENTER);
+        add(mainPanel);
 
-        // 다이얼로그 배경색
-        getContentPane().setBackground(new Color(240, 240, 240));
+        // 엔터 키로 추가 버튼 클릭 효과
+        ssnField.addActionListener(e -> addButton.doClick());
     }
 
     private class AddAdminActionListener implements ActionListener {
