@@ -98,22 +98,6 @@ public class EmployeeDAO {
             pstmt.executeUpdate();
         }
     }
-/*
-    // 관리자 아이디와 비밀번호 인증 메서드
-    public boolean authenticateAdmin(String username, String password) throws SQLException {
-        String sql = "SELECT password FROM ADMIN WHERE username = ?";
-        try (Connection conn = JDBCConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    String storedPassword = rs.getString("password");
-                    return storedPassword.equals(password);
-                }
-            }
-        }
-        return false;
-    }*/
 
     /**
      * 새로운 직원 정보 추가 메소드
@@ -125,10 +109,10 @@ public class EmployeeDAO {
     public boolean addEmployee(Employee employee) throws SQLException {
         // PreparedStatement를 사용하여 SQL 인젝션 방지
         String sql = """
-                INSERT INTO EMPLOYEE (Fname, Minit, Lname, Ssn, Bdate, Address, 
-                                    Sex, Salary, Super_ssn, Dno)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+            INSERT INTO EMPLOYEE (Fname, Minit, Lname, Ssn, Bdate, Address, 
+                                Sex, Salary, Super_ssn, Dno, created, modified)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """;
 
         try (Connection conn = JDBCConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -165,23 +149,6 @@ public class EmployeeDAO {
 
             pstmt.setString(1, ssn);
             return pstmt.executeUpdate() > 0;
-        }
-    }
-
-    /**
-     * 조건에 맞는 직원 삭제 메소드
-     *
-     * @param condition WHERE 절에 들어갈 조건문
-     * @return 삭제된 직원 수
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
-    public int deleteEmployeesByCondition(String condition) throws SQLException {
-        String sql = "DELETE FROM EMPLOYEE WHERE " + condition;
-
-        try (Connection conn = JDBCConnection.getConnection();
-             Statement stmt = conn.createStatement()) {
-
-            return stmt.executeUpdate(sql);
         }
     }
 
@@ -288,8 +255,8 @@ public class EmployeeDAO {
             params.addAll(criteria.get("성별"));
         }
 
-        if (criteria.containsKey("급여") && !criteria.get("급여").isEmpty()) {
-            for (Object salary : criteria.get("급여")) {
+        if (criteria.containsKey("Salary") && !criteria.get("Salary").isEmpty()) {  // "급여" -> "Salary"로 변경
+            for (Object salary : criteria.get("Salary")) {
                 sql.append(" AND e.Salary >= ?");
                 try {
                     params.add(Double.parseDouble(salary.toString()));
