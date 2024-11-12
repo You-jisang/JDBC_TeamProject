@@ -7,16 +7,8 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * 직원 데이터의 데이터베이스 접근을 담당하는 DAO(Data Access Object) 클래스
- * CRUD(Create, Read, Update, Delete) 작업을 처리
- */
 public class EmployeeDAO {
 
-    /**
-     * 기본 직원 조회 SQL 쿼리
-     * Employee 테이블과 Department 테이블을 조인하여 전체 직원 정보 조회
-     */
     private static final String SELECT_ALL_EMPLOYEES = """
             SELECT e.Fname, e.Minit, e.Lname, e.Ssn, e.Bdate, e.Address, 
                    e.Sex, e.Salary, e.Super_ssn, e.Dno, d.Dname, e.modified
@@ -25,12 +17,6 @@ public class EmployeeDAO {
             ORDER BY e.Fname, e.Lname
             """;
 
-    /**
-     * 전체 직원 정보 조회 메소드
-     *
-     * @return 전체 직원 목록
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     public List<Employee> getAllEmployees() throws SQLException {
         List<Employee> employees = new ArrayList<>();
 
@@ -48,13 +34,6 @@ public class EmployeeDAO {
         return employees;
     }
 
-    /**
-     * 직원 SSN 존재 여부 확인 메서드
-     *
-     * @param ssn 확인할 직원의 SSN
-     * @return SSN이 존재하면 true, 그렇지 않으면 false
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     public boolean isEmployeeSsnExists(String ssn) throws SQLException {
         String sql = "SELECT 1 FROM EMPLOYEE WHERE Ssn = ?";
         try (Connection conn = JDBCConnection.getConnection();
@@ -66,13 +45,6 @@ public class EmployeeDAO {
         }
     }
 
-    /**
-     * 관리자로 지정된 SSN인지 확인하는 메서드
-     *
-     * @param ssn 확인할 SSN
-     * @return SSN이 ADMIN 테이블에 존재하면 true, 그렇지 않으면 false
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     public boolean isAdminSsn(String ssn) throws SQLException {
         String sql = "SELECT 1 FROM ADMIN WHERE ssn = ?";
         try (Connection conn = JDBCConnection.getConnection();
@@ -84,12 +56,6 @@ public class EmployeeDAO {
         }
     }
 
-    /**
-     * 새로운 관리자 SSN을 추가하는 메서드
-     *
-     * @param ssn 추가할 관리자의 SSN
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     public void addAdminSsn(String ssn) throws SQLException {
         String sql = "INSERT INTO ADMIN (ssn) VALUES (?)";
         try (Connection conn = JDBCConnection.getConnection();
@@ -99,13 +65,6 @@ public class EmployeeDAO {
         }
     }
 
-    /**
-     * 새로운 직원 정보 추가 메소드
-     *
-     * @param employee 추가할 직원 정보
-     * @return 추가 성공 여부
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     public boolean addEmployee(Employee employee) throws SQLException {
         // PreparedStatement를 사용하여 SQL 인젝션 방지
         String sql = """
@@ -134,13 +93,6 @@ public class EmployeeDAO {
         }
     }
 
-    /**
-     * 직원 정보 삭제 메소드
-     *
-     * @param ssn 삭제할 직원의 SSN
-     * @return 삭제 성공 여부
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     public boolean deleteEmployee(String ssn) throws SQLException {
         String sql = "DELETE FROM EMPLOYEE WHERE Ssn = ?";
 
@@ -152,13 +104,6 @@ public class EmployeeDAO {
         }
     }
 
-    /**
-     * ResultSet에서 Employee 객체 생성하는 헬퍼 메소드
-     *
-     * @param rs 데이터베이스 조회 결과
-     * @return Employee 객체
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     private Employee createEmployeeFromResultSet(ResultSet rs) throws SQLException {
         Employee employee = new Employee();
 
@@ -187,13 +132,6 @@ public class EmployeeDAO {
         return employee;
     }
 
-    /**
-     * 검색 조건에 따른 직원 검색 메소드
-     *
-     * @param criteria 검색 조건 Map
-     * @return 검색된 직원 목록
-     * @throws SQLException SQL 실행 중 발생할 수 있는 예외
-     */
     public List<Employee> searchEmployees(Map<String, List<Object>> criteria) throws SQLException {
         List<Employee> employees = new ArrayList<>();
 

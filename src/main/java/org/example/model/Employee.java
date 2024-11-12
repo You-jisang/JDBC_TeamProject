@@ -1,14 +1,9 @@
-// Model/Employee.java
 package org.example.model;
 
 
 import java.sql.Timestamp;
 import java.util.Date;
 
-/**
- * 직원 정보를 담는 모델 클래스
- * EMPLOYEE 테이블의 각 컬럼에 대응되는 필드들을 포함
- */
 public class Employee {
     private String firstName;    // 이름
     private char minit;         // 중간 이름 이니셜

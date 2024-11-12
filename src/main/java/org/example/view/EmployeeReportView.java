@@ -103,10 +103,6 @@ public class EmployeeReportView extends JFrame {
         resultTable.setModel(tableModel);
     }
 
-    /**
-     * 전체 직원 데이터를 로드하고 테이블에 표시하는 메소드
-     * 체크된 컬럼만 선택된 순서대로 표시하며, 선택 상태를 초기화함
-     */
     private void loadEmployeeData() {
         // 선택된 직원 정보 초기화 (테이블 새로고침 시 선택 상태 리셋)
         selectedEmployeeNames.clear();

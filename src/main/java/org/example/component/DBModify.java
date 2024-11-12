@@ -12,31 +12,16 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-/**
- * 직원 정보 수정을 담당하는 클래스
- * 선택된 직원들의 정보를 일괄 수정하는 기능 제공
- */
 public class DBModify {
     private final EmployeeReportView parentFrame;      // 부모 프레임 참조
     private JTextField modifyValueField;               // 수정할 값 입력 필드
     private String selectedColumn;                     // 선택된 수정 컬럼
     private List<String> selectedSsns;                // 선택된 직원들의 SSN 목록
 
-    /**
-     * 생성자
-     *
-     * @param parent 부모 프레임 (EmployeeReportView)
-     */
     public DBModify(EmployeeReportView parent) {
         this.parentFrame = parent;
     }
 
-    /**
-     * 수정 패널 생성
-     * 수정할 속성 선택 콤보박스, 값 입력 필드, 수정 버튼 포함
-     *
-     * @return 수정 기능이 포함된 패널
-     */
     public JPanel createModifyPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.add(new JLabel("수정:"));
@@ -64,12 +49,6 @@ public class DBModify {
         return panel;
     }
 
-    /**
-     * 화면 표시용 컬럼명을 데이터베이스 컬럼명으로 변환
-     *
-     * @param displayName 화면에 표시되는 컬럼명
-     * @return 데이터베이스의 실제 컬럼명
-     */
     private String getColumnNameForDatabase(String displayName) {
         return switch (displayName) {
             case "Salary" -> "Salary";
@@ -82,10 +61,6 @@ public class DBModify {
         };
     }
 
-    /**
-     * 선택된 직원들의 정보 수정
-     * 선택된 컬럼의 값을 입력된 새 값으로 업데이트
-     */
     private void updateSelectedEmployees() {
         // 직원 선택 여부 검증
         if (selectedSsns == null || selectedSsns.isEmpty()) {
@@ -164,12 +139,6 @@ public class DBModify {
         }
     }
 
-    /**
-     * 선택된 직원들의 SSN 목록 설정
-     * 체크박스 선택 변경 시 호출됨
-     *
-     * @param ssns 선택된 직원들의 SSN 목록
-     */
     public void setSelectedSsns(List<String> ssns) {
         this.selectedSsns = ssns;
     }

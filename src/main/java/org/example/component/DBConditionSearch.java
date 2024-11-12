@@ -17,14 +17,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
 
-/**
- * 조건 검색 기능을 제공하는 클래스
- */
-
-/**
- * 직원 정보 검색을 위한 클래스
- * 일반 검색과 그룹별 평균 급여 검색 기능을 제공
- */
 public class DBConditionSearch {
     private final EmployeeDAO employeeDAO;           // DB 접근 객체
     private final EmployeeReportView parentFrame;    // 부모 프레임 참조
@@ -40,19 +32,12 @@ public class DBConditionSearch {
     private JPanel conditionsPanel;  // 추가
 
 
-    /**
-     * 생성자: 부모 프레임 참조를 받아 초기화
-     */
     public DBConditionSearch(EmployeeReportView parent) {
         this.parentFrame = parent;
         this.employeeDAO = new EmployeeDAO();
         this.conditionPanels = new ArrayList<>();
     }
 
-    /**
-     * 검색 조건 패널 생성
-     * 검색 유형, 검색어 입력, 그룹화 옵션을 포함한 UI 구성
-     */
     public JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
         searchPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -232,10 +217,6 @@ public class DBConditionSearch {
         }
     }
 
-    /**
-     * 검색 수행 메소드
-     * 일반 검색 또는 그룹별 검색을 구분하여 처리
-     */
     public void performSearch() {
         parentFrame.clearSelectedEmployees();
 
@@ -275,12 +256,6 @@ public class DBConditionSearch {
         }
     }
 
-    /**
-     * 검색 결과를 테이블에 표시하는 메소드
-     * 사용자가 선택한 컬럼 순서를 유지하며 데이터를 표시
-     *
-     * @param employees 표시할 직원 목록
-     */
     private void displayResults(List<Employee> employees) {
         // 체크박스 열을 포함한 커스텀 테이블 모델 생성
         DefaultTableModel model = new DefaultTableModel() {
@@ -390,9 +365,6 @@ public class DBConditionSearch {
         parentFrame.addCheckboxListener(model);
     }
 
-    /**
-     * 그룹별 평균 급여 결과를 테이블에 표시
-     */
     private void displayGroupResults(Map<String, Double> avgSalaries, String groupBy) {
         DefaultTableModel model = new DefaultTableModel() {
             @Override
@@ -427,10 +399,6 @@ public class DBConditionSearch {
         parentFrame.updateTableModel(model);
     }
 
-    /**
-     * 그룹별 평균 급여 조회
-     * 성별, 부서, 상급자별 평균 급여 계산
-     */
     public Map<String, Double> getAverageSalaryByGroup(String groupBy) throws SQLException {
         Map<String, Double> avgSalaries = new HashMap<>();
 

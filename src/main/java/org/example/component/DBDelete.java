@@ -13,10 +13,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 직원 정보 삭제를 담당하는 패널 클래스
- * 선택된 직원들의 삭제 처리를 수행
- */
 public class DBDelete extends JPanel {
     private final EmployeeDAO employeeDAO;          // 데이터베이스 접근 객체
     private JLabel selectedEmployeesLabel;          // 선택된 직원 이름을 표시하는 레이블
@@ -30,10 +26,6 @@ public class DBDelete extends JPanel {
         initializeUI();
     }
 
-    /**
-     * UI 초기화 메소드
-     * 플로우 레이아웃을 사용하여 컴포넌트 배치
-     */
     private void initializeUI() {
         // 패널 레이아웃 설정
         setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -59,13 +51,6 @@ public class DBDelete extends JPanel {
         add(deleteButton);
     }
 
-    /**
-     * 선택된 직원 정보 업데이트 메소드
-     * 테이블에서 체크박스 선택 시 호출됨
-     *
-     * @param selectedEmployees 선택된 직원 이름 목록
-     * @param selectedSsns      선택된 직원 SSN 목록
-     */
     public void updateSelectedEmployees(List<String> selectedEmployees, List<String> selectedSsns) {
         this.selectedSsns = selectedSsns;
         this.selectedEmployeeNames = new ArrayList<>(selectedEmployees);  // 리스트 복사해서 저장
@@ -73,10 +58,6 @@ public class DBDelete extends JPanel {
         ((JLabel) getComponent(3)).setText(String.valueOf(selectedEmployees.size()));
     }
 
-    /**
-     * 선택된 직원 삭제 메소드
-     * 삭제 버튼 클릭 시 호출됨
-     */
     private void deleteSelectedEmployees() {
         // 부모 프레임에서 Name과 SSN 체크박스 상태 확인
         Container parent = getParent();
@@ -247,9 +228,6 @@ public class DBDelete extends JPanel {
         }
     }
 
-    /**
-     * 주어진 SSN을 가진 직원의 외래키 종속성을 확인하는 메소드
-     */
     private boolean hasDependencies(String ssn) throws SQLException {
         try (Connection conn = JDBCConnection.getConnection()) {
             // 각 테이블별 종속성 확인 쿼리
